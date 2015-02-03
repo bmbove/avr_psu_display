@@ -79,6 +79,7 @@ const uint8_t pin[4];
 volatile uint8_t *port[4];
 
 uint8_t _cur_line;
+uint8_t _line_change;
 
 void _pulse_enable(void);
 void _set_pin(volatile uint8_t *port, uint8_t pin, uint8_t value);

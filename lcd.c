@@ -87,15 +87,25 @@ void write_line(char* string, int line){
 
 void put_char(char c, FILE *stream){
     RS_P &= ~RS;
-    if(c == '\n'){
+    // For new line flag, clear the next line then set the cursor 
+    // at the beginning of it. Also reset the flag.
+    if(_line_change){
         if(_cur_line == 1){
+            write_line(" ", 2);
             _write_byte(0x80 + 64);
+            _line_change = 0;
             _cur_line = 2;
         }
         else{
+            write_line(" ", 1);
             _write_byte(0x80);
+            _line_change = 0;
             _cur_line = 1;
         }
+    }
+    // If we get a new line, set the flag
+    if(c == '\n'){
+        _line_change = 1;
     }
     else{
         RS_P |= RS;
@@ -164,4 +174,5 @@ void lcd_init(void){
     _delay_us(2000);
 
     _cur_line = 1;
+    _line_change = 0;
 }
