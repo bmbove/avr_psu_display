@@ -10,7 +10,7 @@ AVRINC = /usr/avr/include
 CFLAGS = -Wall -Os -g -I$(AVRINC) -mmcu=$(MCU)
 CFLAGS += -DF_CPU=8000000
 LDFLAGS += -mmcu=$(MCU) -Os
-SRCS = main.c lcd.c
+SRCS = main.c lcd.c adc.c
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: all
