@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <util/delay.h>
 #include "lcd.h"
@@ -80,8 +81,27 @@ void write_line(char* string, int line){
     for(i = length; i < 16; i++)
         _write_byte(0x20);
 
-    RS_P &= !RS;
+    RS_P &= ~RS;
 
+}
+
+void put_char(char c, FILE *stream){
+    RS_P &= ~RS;
+    if(c == '\n'){
+        if(_cur_line == 1){
+            _write_byte(0x80 + 64);
+            _cur_line = 2;
+        }
+        else{
+            _write_byte(0x80);
+            _cur_line = 1;
+        }
+    }
+    else{
+        RS_P |= RS;
+        _write_byte(c);
+        RS_P &= ~RS;
+    }
 }
 
 void lcd_init(void){
@@ -142,4 +162,6 @@ void lcd_init(void){
 
     _write_byte(0x02);
     _delay_us(2000);
+
+    _cur_line = 1;
 }

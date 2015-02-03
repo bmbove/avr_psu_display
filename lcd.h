@@ -78,9 +78,12 @@
 const uint8_t pin[4];
 volatile uint8_t *port[4];
 
+uint8_t _cur_line;
+
 void _pulse_enable(void);
 void _set_pin(volatile uint8_t *port, uint8_t pin, uint8_t value);
 void _write_bits(uint8_t to_write);
 void _write_nibble(uint8_t to_write);
 void write_line(char* string, int line);
 void lcd_init(void);
+void put_char(char c, FILE *stream);
