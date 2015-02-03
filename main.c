@@ -57,11 +57,11 @@ int main(void){
             uint8_t i;
 
             current = current->next;
-            printf("%3u ", current->samples[1]);
+            printf("%3u ", current->value);
             current = current->next;
-            printf("%3u ", current->samples[2]);
+            printf("%3u ", current->value);
             current = current->next;
-            printf("%3u ", current->samples[3]);
+            printf("%3u ", current->value);
             printf("\n");
 
             current = adc_lst->front->next;

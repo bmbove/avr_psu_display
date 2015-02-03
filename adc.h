@@ -1,6 +1,6 @@
 #include <avr/io.h>
 
-#define SCALE 1
+#define SCALE 2
 
 struct ADCCh{
     uint8_t channel;

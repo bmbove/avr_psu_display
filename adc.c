@@ -88,13 +88,14 @@ void adc_add_reading(struct ADCCh *ch, uint16_t reading){
     // wait for 16 new samples (factor of 4 per extra bit)
     // then compute new value using exponentially weighted
     // running average. scale factor power of 2 for simplicity.
+    reading <<= 2;
     if(ch->sample_count == 16){ 
         int32_t prev_w = ch->value - (ch->value >> SCALE);
         ch->value = (reading >> SCALE) + prev_w;
         ch->sample_count = 0;
     }
     else{
-        ch->samples[ch->sample_count] = (reading << 2);
+        ch->samples[ch->sample_count] = reading;
         ch->sample_count++;
     }
 }
