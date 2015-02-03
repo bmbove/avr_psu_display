@@ -20,11 +20,11 @@ const uint8_t pin[4] = {
 void _pulse_enable(void){
     
     EN_P &= ~EN;
-    _delay_us(100);
+    _delay_us(10);
     EN_P |= EN;
-    _delay_us(100);
+    _delay_us(10);
     EN_P &= ~EN;
-    _delay_us(100);
+    _delay_us(10);
 }
 
 void _set_pin(volatile uint8_t *port, const uint8_t pin, uint8_t value){

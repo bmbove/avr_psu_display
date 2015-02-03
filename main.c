@@ -4,16 +4,12 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "lcd.h"
+#include "main.h"
+
+#ifndef ADC_INC
+#define ADC_INC
 #include "adc.h"
-
-uint8_t number = 0;
-volatile uint8_t readflag = 0;
-int analog_value1;
-volatile uint16_t analog_value2;
-volatile uint16_t analog_value3;
-volatile uint16_t analog_value4;
-struct ADCList *adc_lst;
-
+#endif
 
 ISR(ADC_vect){
 
@@ -21,8 +17,9 @@ ISR(ADC_vect){
 
     uint8_t low = ADCL;
     uint8_t high = ADCH;
+    uint16_t reading = ((high << 8) | low);
 
-    adc_lst->cur->value = ((high << 8) | low);
+    adc_add_reading(adc_lst->cur, reading);
     next_adc(adc_lst);
     ADMUX = (ADMUX & 0xF0) | adc_lst->cur->channel;
 
@@ -49,33 +46,37 @@ int main(void){
 
     // enable interrupts
     sei();
+    readflag = 0;
 
+    // set up timer, prescaler 64
+    TCCR1B |= (1 << CS10 | 1 << CS11);
+    uint8_t counter = 0;
     while(1){
-
-        if(readflag == 1){
-            /*uint16_t ineg = analog_value1;*/
-            /*uint16_t vpos = analog_value2;*/
-            /*uint16_t vneg = analog_value3;*/
-            /*uint16_t ipos = analog_value4;*/
-            /*uint8_t *digits = malloc(sizeof(uint8_t)*3);*/
-            /*adc_convert(vneg, digits);*/
-
-
-            /*printf("%u    %u\n", vpos, ipos);*/
-            /*printf("-%u.%u%u\n", digits[0], digits[1], digits[2]);*/
+        if (TCNT1 == 50000){
             struct ADCCh *current = adc_lst->front->next;
             uint8_t i;
-            for( i = 0; i < adc_lst->size; i++){
-                printf("%u ", current->value);
-                current = current->next;
-            }
-            /*printf("%u\n", adc_lst->size);*/
-            /*printf("%u %u", adc_lst->cur->channel, ADMUX);*/
+
+            current = current->next;
+            printf("%3u ", current->samples[1]);
+            current = current->next;
+            printf("%3u ", current->samples[2]);
+            current = current->next;
+            printf("%3u ", current->samples[3]);
             printf("\n");
-            printf("test\n");
-            readflag = 0;
-            _delay_us(500000);
-            /*free(digits);*/
+
+            current = adc_lst->front->next;
+
+            printf("%3u ", current->channel);
+            current = current->next;
+            printf("%3u ", current->channel);
+            current = current->next;
+            printf("%3u ", current->channel);
+            current = current->next;
+            printf("%3u", current->channel);
+            printf("\n");
+            
+            // reset timer
+            TCNT1 = 0;
         }
 
     }
