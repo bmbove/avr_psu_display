@@ -17,6 +17,7 @@ const uint8_t pin[4] = {
     DATA_7
 };
 
+// enable pin must be pulsed after bits are sent
 void _pulse_enable(void){
     
     EN_P &= ~EN;
@@ -27,6 +28,7 @@ void _pulse_enable(void){
     _delay_us(10);
 }
 
+// sets a pin to passed value
 void _set_pin(volatile uint8_t *port, const uint8_t pin, uint8_t value){
     if(value)
         *port |= pin;
@@ -34,6 +36,8 @@ void _set_pin(volatile uint8_t *port, const uint8_t pin, uint8_t value){
         *port &= ~pin;
 }
 
+// display driver needs 8 bits per character but can accept
+// 4 bits twice for less wires
 void _write_byte(uint8_t to_write){
 
     uint8_t bottom = to_write & 0x0F;
@@ -41,10 +45,12 @@ void _write_byte(uint8_t to_write){
     
     int i;
 
+    // send the top 4 bits
     for(i=0; i < 4; i++)
         _set_pin(port[i], pin[i], (top >> i & 0x01));
     _pulse_enable();
 
+    // send the bottom 4 bits
     for(i=0; i < 4; i++)
         _set_pin(port[i], pin[i], (bottom >> i & 0x01));
     _pulse_enable();
@@ -69,6 +75,7 @@ void write_line(char* string, int line){
 
     RS_P &= ~RS;
 
+    // switch to correct line
     if(line == 1)
         _write_byte(0x80);
     else
@@ -78,6 +85,8 @@ void write_line(char* string, int line){
     for(i = 0; i < length; i++)
         _write_byte((uint8_t)string[i]);
 
+    // write spaces to the rest of the line to clear out any
+    // text that wasn't overwritten
     for(i = length; i < 16; i++)
         _write_byte(0x20);
 
@@ -162,14 +171,18 @@ void lcd_init(void){
     _write_byte((LCD_FUNCTIONSET | command));
     _delay_us(60);
     
+    // turn display on, cursor and blink off
     command = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;  
     _write_byte((LCD_DISPLAYCONTROL | command));
     
+    // clear the display
     _write_byte(LCD_CLEARDISPLAY);
     
+    // set text direction
     command = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;
     _write_byte(LCD_ENTRYMODESET | command);
 
+    // set cursor to beginning?
     _write_byte(0x02);
     _delay_us(2000);
 

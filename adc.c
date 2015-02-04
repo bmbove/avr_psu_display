@@ -24,6 +24,7 @@ void _add_adc(struct ADCList *lst, uint8_t num){
     newlink->channel = num;
     newlink->value = 0;
     newlink->sample_count = 0;
+    newlink->voltage = 0;
 
     newlink->next = lst->front->next;
     lst->front->next = newlink;
@@ -92,22 +93,11 @@ void adc_add_reading(struct ADCCh *ch, uint16_t reading){
     if(ch->sample_count == 16){ 
         int32_t prev_w = ch->value - (ch->value >> SCALE);
         ch->value = (reading >> SCALE) + prev_w;
+        ch->voltage = ((uint32_t)ch->value * AREF * 10000) >> 12;
         ch->sample_count = 0;
     }
     else{
         ch->samples[ch->sample_count] = reading;
         ch->sample_count++;
-    }
-}
-
-void adc_convert(uint16_t reading, uint8_t *digits){
-
-    digits[0] = (reading * 5) >> 10;
-    digits[1] = ((reading * 5) % 1024)/100;
-    digits[2] = (((reading * 5) % 1024) % 100)/10;
-
-    if(digits[1] > 9){
-        digits[0]++;
-        digits[1] = 0;
     }
 }
