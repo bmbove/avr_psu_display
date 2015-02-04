@@ -11,15 +11,30 @@
 #include "adc.h"
 #endif
 
-void display_convert(uint16_t input, char *out){
+void display_convert(uint16_t input, char *out, uint8_t num){
 
+    uint8_t * digits = malloc(sizeof(uint8_t)*num);
     uint8_t i;
-    uint8_t digits[4];
-    for (i = 4; i--; ){
+    for ( i=num; i--; ){
         digits[i] = input % 10;
         input /= 10;
     }
-    sprintf(out, "%u%u.%u%u", digits[0], digits[1], digits[2], digits[3]);
+    // this is ugly... i gave up.
+    if(num == 4){
+        if(digits[0] > 0)
+            sprintf(out, "%u%u.%u%u", digits[0], digits[1], digits[2], digits[3]);
+        else
+            sprintf(out, "%u.%u%u", digits[1], digits[2], digits[3]);
+    }
+    if(num == 3){
+        if(digits[0] > 0 && digits[1] > 0)
+            sprintf(out, "%u%u%u", digits[0], digits[1], digits[2]);
+        else if(digits[0] == 0 && digits[1] != 0)
+            sprintf(out, "%u%u", digits[1], digits[2]);
+        else
+            sprintf(out, "%u", digits[2]);
+    }
+    free(digits);
 }
 
 
@@ -66,7 +81,8 @@ int main(void){
     char *vpos_d = malloc(sizeof(char)*6);
     char *vneg_d = malloc(sizeof(char)*6);
     char *ipos_d = malloc(sizeof(char)*6);
-    char *ineg_d = malloc(sizeof(char)*6);
+    char *ineg_d = malloc(sizeof(char)*3);
+    char *plus = malloc(sizeof(char));
 
     while(1){
         if (TCNT1 == 50000){
@@ -80,18 +96,36 @@ int main(void){
 
             struct ADCCh *cur = adc_lst->front->next;
             
+            uint16_t ineg = (((cur->voltage*173/100) + 6)/100);
+            display_convert(ineg, ineg_d, 3);
+
             cur = cur->next;
             uint16_t vpos = (((cur->voltage*3341/1000) + 412)/100);
-            display_convert(vpos, vpos_d);
+            display_convert(vpos, vpos_d, 4);
 
             cur = cur->next;
             uint16_t vneg = (((cur->voltage*3346/1000) + 603)/100);
-            display_convert(vneg, vneg_d);
+            display_convert(vneg, vneg_d, 4);
 
-            printf("A  %5sV %4smA", vpos_d, "0");
+            cur = cur->next;
+            uint16_t ipos = (((cur->voltage*173)/100) + 6)/100;
+            display_convert(ipos, ipos_d, 3);
+
+            // due to opamp gain, we can't really see over 855mA
+            if(ipos == 855)
+                sprintf(plus, "%s", "+");
+            else
+                sprintf(plus, "%s", " ");
+
+            printf("A  %5sV %3smA%s", vpos_d, ipos_d, plus);
             printf("\n");
 
-            printf("B -%5sV %4smA", vneg_d, "0");
+            if(ineg == 855)
+                sprintf(plus, "%s", "+");
+            else
+                sprintf(plus, "%s", " ");
+
+            printf("B -%5sV %3smA%s", vneg_d, ineg_d, plus);
             printf("\n");
             
             // reset timer

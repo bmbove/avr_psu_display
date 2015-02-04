@@ -18,13 +18,14 @@ struct ADCList *_adc_lst_init(){
 }
 
 // add ADC channel to front of list
-void _add_adc(struct ADCList *lst, uint8_t num){
+void _add_adc(struct ADCList *lst, uint8_t num, uint8_t scale){
 
     struct ADCCh *newlink = malloc(sizeof(struct ADCCh));
     newlink->channel = num;
     newlink->value = 0;
     newlink->sample_count = 0;
     newlink->voltage = 0;
+    newlink->scale = scale;
 
     newlink->next = lst->front->next;
     lst->front->next = newlink;
@@ -75,10 +76,10 @@ struct ADCList * adc_init(void){
     // 3: v neg
     // 2: i pos 
     
-    _add_adc(adc_lst, 2);
-    _add_adc(adc_lst, 3);
-    _add_adc(adc_lst, 4);
-    _add_adc(adc_lst, 5);
+    _add_adc(adc_lst, 2, 2);
+    _add_adc(adc_lst, 3, 20);
+    _add_adc(adc_lst, 4, 20);
+    _add_adc(adc_lst, 5, 2);
 
     return adc_lst;
 }
@@ -91,8 +92,8 @@ void adc_add_reading(struct ADCCh *ch, uint16_t reading){
     // running average. scale factor power of 2 for simplicity.
     reading <<= 2;
     if(ch->sample_count == 16){ 
-        int32_t prev_w = ch->value - (ch->value >> SCALE);
-        ch->value = (reading >> SCALE) + prev_w;
+        int32_t prev_w = ch->value - ((ch->value * ch->scale)/100);
+        ch->value = ((reading * ch->scale)/100) + prev_w;
         ch->voltage = ((uint32_t)ch->value * AREF * 10000) >> 12;
         ch->sample_count = 0;
     }
