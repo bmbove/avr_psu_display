@@ -18,14 +18,14 @@ struct ADCList *_adc_lst_init(){
 }
 
 // add ADC channel to front of list
-void _add_adc(struct ADCList *lst, uint8_t num, uint8_t scale){
+void _add_adc(struct ADCList *lst, uint8_t num){
 
     struct ADCCh *newlink = malloc(sizeof(struct ADCCh));
     newlink->channel = num;
     newlink->value = 0;
     newlink->sample_count = 0;
-    newlink->voltage = 0;
-    newlink->scale = scale;
+    // initialize at about halfway for moving average
+    newlink->voltage = 16000;
 
     newlink->next = lst->front->next;
     lst->front->next = newlink;
@@ -76,10 +76,10 @@ struct ADCList * adc_init(void){
     // 3: v neg
     // 2: i pos 
     
-    _add_adc(adc_lst, 2, 2);
-    _add_adc(adc_lst, 3, 20);
-    _add_adc(adc_lst, 4, 20);
-    _add_adc(adc_lst, 5, 2);
+    _add_adc(adc_lst, 2);
+    _add_adc(adc_lst, 3);
+    _add_adc(adc_lst, 4);
+    _add_adc(adc_lst, 5);
 
     return adc_lst;
 }
@@ -88,13 +88,26 @@ void adc_add_reading(struct ADCCh *ch, uint16_t reading){
     
     // oversample to get 12 bit resolution.
     // wait for 16 new samples (factor of 4 per extra bit)
-    // then compute new value using exponentially weighted
-    // running average. scale factor power of 2 for simplicity.
+    // then compute new voltage value using exponentially weighted
+    // running average. 
     reading <<= 2;
-    if(ch->sample_count == 16){ 
-        int32_t prev_w = ch->value - ((ch->value * ch->scale)/100);
-        ch->value = ((reading * ch->scale)/100) + prev_w;
-        ch->voltage = ((uint32_t)ch->value * AREF * 10000) >> 12;
+    if(ch->sample_count == 15){ 
+
+        ch->samples[15] = reading;
+
+        uint8_t i;
+        uint16_t average = 0;
+        for(i=0; i < 16; i++){
+            average += ch->samples[i];
+        }
+        average >>= 4;
+        ch->value = average;
+
+        uint32_t new_v= ((uint32_t)ch->value * AREF * 10000) >> 12;
+        int32_t prev_v = ch->voltage - ((ch->voltage * SCALE)/100);
+        ch->voltage = ((new_v * SCALE)/100) + prev_v;
+        ch->voltage = new_v;
+
         ch->sample_count = 0;
     }
     else{

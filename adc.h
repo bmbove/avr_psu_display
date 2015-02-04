@@ -1,6 +1,9 @@
 #include <avr/io.h>
 
+// ADC reference voltage
 #define AREF 5
+// Weight factor * 100 for moving average
+#define SCALE 80 
 
 struct ADCCh{
     // ADC channel
@@ -13,8 +16,6 @@ struct ADCCh{
     uint16_t value;
     // computed voltage
     uint32_t voltage;
-    // scale for exp moving average
-    uint8_t scale;
     // next channel
     struct  ADCCh *next;
 };
@@ -26,7 +27,7 @@ struct ADCList{
 };
 
 struct ADCList *_adc_lst_init();
-void _add_adc(struct ADCList *lst, uint8_t num, uint8_t scale);
+void _add_adc(struct ADCList *lst, uint8_t num);
 
 struct ADCList * adc_init();
 void next_adc(struct ADCList *lst);

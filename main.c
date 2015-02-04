@@ -11,6 +11,21 @@
 #include "adc.h"
 #endif
 
+// Interrupt- when a new ADC reading is available
+ISR(ADC_vect){
+
+    uint8_t low = ADCL;
+    uint8_t high = ADCH;
+    uint16_t reading = ((high << 8) | low);
+
+    // add reading in, switch to next channel
+    adc_add_reading(adc_lst->cur, reading);
+    next_adc(adc_lst);
+    ADMUX = (ADMUX & 0xF0) | adc_lst->cur->channel;
+
+}
+
+
 void display_convert(uint16_t input, char *out, uint8_t num){
 
     uint8_t * digits = malloc(sizeof(uint8_t)*num);
@@ -19,7 +34,7 @@ void display_convert(uint16_t input, char *out, uint8_t num){
         digits[i] = input % 10;
         input /= 10;
     }
-    // this is ugly... i gave up.
+    // this is ugly...
     if(num == 4){
         if(digits[0] > 0)
             sprintf(out, "%u%u.%u%u", digits[0], digits[1], digits[2], digits[3]);
@@ -38,21 +53,9 @@ void display_convert(uint16_t input, char *out, uint8_t num){
 }
 
 
-ISR(ADC_vect){
-
-    readflag = 1;
-
-    uint8_t low = ADCL;
-    uint8_t high = ADCH;
-    uint16_t reading = ((high << 8) | low);
-
-    adc_add_reading(adc_lst->cur, reading);
-    next_adc(adc_lst);
-    ADMUX = (ADMUX & 0xF0) | adc_lst->cur->channel;
-
-}
-
 int main(void){
+
+    _delay_ms(200);
 
     DDRB |= _BV(DDB5);
 
@@ -73,7 +76,6 @@ int main(void){
 
     // enable interrupts
     sei();
-    readflag = 0;
 
     // set up timer, prescaler 64
     TCCR1B |= (1 << CS10 | 1 << CS11);
@@ -91,11 +93,12 @@ int main(void){
             // 2: v neg
             // 3: i pos 
 
+            // Scaling for display
             // vpos = 3.341*adc + 412.7 (scale 10000)
             // vneg = 3.346*adc + 603 
 
             struct ADCCh *cur = adc_lst->front->next;
-            
+
             uint16_t ineg = (((cur->voltage*173/100) + 6)/100);
             display_convert(ineg, ineg_d, 3);
 
@@ -111,22 +114,20 @@ int main(void){
             uint16_t ipos = (((cur->voltage*173)/100) + 6)/100;
             display_convert(ipos, ipos_d, 3);
 
-            // due to opamp gain, we can't really see over 855mA
-            if(ipos == 855)
+            // due to opamp gain, we can't really see over 864mA
+            if(ipos == 864)
                 sprintf(plus, "%s", "+");
             else
                 sprintf(plus, "%s", " ");
 
-            printf("A  %5sV %3smA%s", vpos_d, ipos_d, plus);
-            printf("\n");
+            printf("A  %5sV %3smA%s\n", vpos_d, ipos_d, plus);
 
-            if(ineg == 855)
+            if(ineg == 864)
                 sprintf(plus, "%s", "+");
             else
                 sprintf(plus, "%s", " ");
 
-            printf("B -%5sV %3smA%s", vneg_d, ineg_d, plus);
-            printf("\n");
+            printf("B -%5sV %3smA%s\n", vneg_d, ineg_d, plus);
             
             // reset timer
             TCNT1 = 0;
