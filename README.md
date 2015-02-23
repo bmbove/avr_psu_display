@@ -1,4 +1,5 @@
-# LCD Display for a bench power supply
+LCD Display for a bench power supply
+------------------------------------
 
 This program measures the current and voltage from a bench power supply
 using 4 of the ADC channels on an AVR (an ATmega328p in my case) and 
@@ -12,3 +13,5 @@ on pins, 4-byte mode is selected in the initialization of the display.
 In the circuit implementation, voltages were stepped down to 0-5V range
 using op amps. The current measurements are based on the output of a 
 difference amplifier taking input from either side of a test resistor.
+
+Writeup on the build can be found [here](http://brianbove.com/blog/2015/2/23/power-supply-gets-a-display/).
