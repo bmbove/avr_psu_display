@@ -38,3 +38,5 @@ clean:
 	-rm -f $(OBJS)
 	-rm -f $(PROGRAM).elf $(PROGRAM).hex $(PROGRAM).asm
 
+dump:
+	avrdude -c $(PRGMR) -p $(DEV) -U flash:r:flashdump.hex
